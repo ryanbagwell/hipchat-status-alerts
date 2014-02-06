@@ -54,7 +54,8 @@ class Notify(object):
             'room_id': self.hipchat_options.get('ROOM_ID'),
             'from': self.hipchat_options.get('MESSAGE_FROM', 'Github'),
             'message': r.json()['body'],
-            'color': self.ALERT_COLORS[r.json()['status']]
+            'color': self.ALERT_COLORS[r.json()['status']],
+            'notify': self.hipchat_options.get('NOTIFY', '0'),
         }
 
         hipster.method('rooms/message', method='POST', parameters=parameters)
@@ -65,6 +66,8 @@ class Notify(object):
         servers = ['%s:%s' % (self.memcache_options.get('SERVER_ADDRESS'), self.memcache_options.get('SERVER_PORT')) ]
 
         return memcache.Client(servers)
+
+
 
 
 n = Notify()
