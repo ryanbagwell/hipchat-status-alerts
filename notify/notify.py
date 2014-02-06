@@ -42,10 +42,12 @@ class Notify(object):
         """ Get the previously saved message """
         last_message = self.cache.get(self.message_key)
 
-        if last_message == r.json(): return
-
         """ Save the latest message to memory """
         self.cache.set(self.message_key, r.json())
+
+        """ If we don't have a value for the last message,
+            or if the message hasn't changed, stop here """
+        if last_message is None or last_message == r.json(): return
 
         """ Now send a notification """
         hipster = hipchat.HipChat(token=self.hipchat_options.get('API_TOKEN'))
