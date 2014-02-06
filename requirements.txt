@@ -1,0 +1,4 @@
+python-memcached==1.53
+requests==2.2.1
+python-simple-hipchat==0.2
+configparser==3.3.0r2
