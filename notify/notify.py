@@ -4,6 +4,7 @@ import memcache
 import requests
 import hipchat
 import configparser
+import os
 
 
 
@@ -19,7 +20,7 @@ class Notify(object):
     def __init__(self):
         self.config = configparser.ConfigParser()
 
-        self.config.read('config.ini')
+        self.config.read(os.path.join(os.path.dirname(__file__), '..', 'config.ini'))
 
         self.memcache_options = self.config['MEMCACHE']
 
@@ -31,6 +32,7 @@ class Notify(object):
 
 
     def notify(self):
+
         """ Get the hipchat options """
         options = self.config['HIPCHAT']
 
@@ -63,24 +65,6 @@ class Notify(object):
         servers = ['%s:%s' % (self.memcache_options.get('SERVER_ADDRESS'), self.memcache_options.get('SERVER_PORT')) ]
 
         return memcache.Client(servers)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 n = Notify()
