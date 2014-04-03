@@ -1,91 +1,41 @@
 #! /usr/bin/env python
-
 import memcache
-import requests
-import hipchat
-import configparser
 import os
-from requests.exceptions import Timeout, ConnectionError
-
-
+import checks
+from config import HipchatConfigParser
 
 
 class Notify(object):
-
-    ALERT_COLORS = {
-        'good': 'green',
-        'minor': 'yellow',
-        'major': 'red',
-    }
+    cache = None
 
     def __init__(self):
-        self.config = configparser.ConfigParser()
+        self.config = HipchatConfigParser()
 
         self.config.read(os.path.join(os.path.dirname(__file__), '..', 'config.ini'))
+        conf = self.config.as_dict()
 
-        self.memcache_options = self.config['MEMCACHE']
+        self.defaults = conf.pop('DEFAULTS')
 
-        self.hipchat_options = self.config['HIPCHAT']
+        self.checks = conf
 
-        self.message_key = str("%s_last_message" % self.memcache_options.get('CACHE_PREFIX', 'GITHUB_STATUS_NOTIFIER'))
-
-        self.cache = self._get_cache()
-
-
-    def notify(self):
-        #self.check_github()
-	self.check_cnpx()
-
-    def check_cnpx(self):
-
-	""" Make a request and get the response """
-	try:
-            r = requests.get('http://cnpx.hzdesign.com:8080/', timeout=10)	
-	except Timeout as e:
-	    print e.__dict__
-	except ConnectionError as e:
-	    print e.__dict__
-	
-
-    def check_github(self):
-
-        """ Get the hipchat options """
-        options = self.config['HIPCHAT']
-
-        """ Get the latest status message """
-        r = requests.get('https://status.github.com/api/last-message.json')
-
-        """ Get the previously saved message """
-        last_message = self.cache.get(self.message_key)
-
-        """ Save the latest message to memory """
-        self.cache.set(self.message_key, r.json())
-
-        """ If we don't have a value for the last message,
-            or if the message hasn't changed, stop here """
-        if last_message is None or last_message == r.json(): return
-
-        """ Now send a notification """
-        hipster = hipchat.HipChat(token=self.hipchat_options.get('API_TOKEN'))
-
-        parameters = {
-            'room_id': self.hipchat_options.get('ROOM_ID'),
-            'from': self.hipchat_options.get('MESSAGE_FROM', 'Github'),
-            'message': r.json()['body'],
-            'color': self.ALERT_COLORS[r.json()['status']],
-            'notify': self.hipchat_options.get('NOTIFY', '0'),
-        }
-
-        hipster.method('rooms/message', method='POST', parameters=parameters)
-
-    def _get_cache(self):
-
-        servers = ['%s:%s' % (self.memcache_options.get('SERVER_ADDRESS'), self.memcache_options.get('SERVER_PORT')) ]
-
-        return memcache.Client(servers)
+        for name, options in self.checks.items():
+            options = dict(self.defaults.items() + options.items())
+            options['name'] = name
+            cls = getattr(checks, '%sCheck' % options['type'])
+            obj = cls(self.get_cache(), options)
 
 
+
+    def get_cache(self):
+
+        servers = ['%s:%s' % (self.defaults['memcache_server_address'], self.defaults['memcache_server_port']) ]
+
+        if self.cache:
+            return self.cache
+
+        self.cache = memcache.Client(servers)
+
+        return self.cache
 
 
 n = Notify()
-n.notify()
