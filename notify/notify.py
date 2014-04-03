@@ -13,7 +13,7 @@ class Notify(object):
 
     ALERT_COLORS = {
         'good': 'green',
-        'minor': 'yello',
+        'minor': 'yellow',
         'major': 'red',
     }
 
@@ -62,7 +62,6 @@ class Notify(object):
 
         hipster.method('rooms/message', method='POST', parameters=parameters)
 
-
     def _get_cache(self):
 
         servers = ['%s:%s' % (self.memcache_options.get('SERVER_ADDRESS'), self.memcache_options.get('SERVER_PORT')) ]
@@ -74,14 +73,3 @@ class Notify(object):
 
 n = Notify()
 n.notify()
-
-
-
-
-
-
-
-
-
-
-
