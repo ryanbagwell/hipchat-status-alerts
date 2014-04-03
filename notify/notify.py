@@ -5,6 +5,7 @@ import requests
 import hipchat
 import configparser
 import os
+from requests.exceptions import Timeout, ConnectionError
 
 
 
@@ -32,6 +33,21 @@ class Notify(object):
 
 
     def notify(self):
+        #self.check_github()
+	self.check_cnpx()
+
+    def check_cnpx(self):
+
+	""" Make a request and get the response """
+	try:
+            r = requests.get('http://cnpx.hzdesign.com:8080/', timeout=10)	
+	except Timeout as e:
+	    print e.__dict__
+	except ConnectionError as e:
+	    print e.__dict__
+	
+
+    def check_github(self):
 
         """ Get the hipchat options """
         options = self.config['HIPCHAT']
