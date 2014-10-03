@@ -1,7 +1,7 @@
 import requests
 import hipchat
 from requests.exceptions import Timeout, ConnectionError
-
+import sys
 
 class Check(object):
     """ A base class for a status check """
@@ -20,6 +20,8 @@ class Check(object):
 
         for k, v in options.items():
             setattr(self, k, v)
+
+        self.log('Initializing status check for %s' % self.name)
 
         """ Get the latest status """
         current_status, color = self.check_status()
@@ -40,7 +42,8 @@ class Check(object):
     def check_status(self):
         """ The logic to check the status. Must return a
             tuple consisting of the message and the color """
-        pass
+	
+        self.log('Getting the current status of %s' % self.name)
 
     def notify(self, message, color='green'):
 
@@ -56,6 +59,13 @@ class Check(object):
 
         hipster.method('rooms/message', method='POST', parameters=parameters)
 
+    def log(self, message):
+        
+        if '--debug' not in sys.argv:
+            return
+
+        print message 
+
 
 class GithubCheck(Check):
     """ Checks the latest Github status """
@@ -69,11 +79,14 @@ class GithubCheck(Check):
     }
 
     def check_status(self):
+        super(GithubCheck, self).check_status()
 
         """ Get the latest status message """
         r = requests.get('https://status.github.com/api/last-message.json')
 
         status = r.json()
+
+        self.log('Current status of %s: %s' % (self.name, status))
 
         return status['body'], self.ALERT_COLORS[status['status']]
 
@@ -115,5 +128,7 @@ class HTTPCheck(Check):
         except ConnectionError:
             msg = "Can't connect to %s" % self.url
             color = 'red'
+
+        self.log('Current status of %s: %s' % (self.name, msg))
 
         return msg, color
